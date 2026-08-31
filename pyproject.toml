@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ci-queue-doctor"
+version = "0.1.0"
+description = "Read-only evidence for queued and waiting GitHub Actions workflow runs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Jialin Cui" }]
+keywords = ["github-actions", "ci", "diagnostics", "workflow", "devtools"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2",
+  "pytest>=8.3",
+  "ruff>=0.12",
+]
+
+[project.scripts]
+ci-queue-doctor = "ci_queue_doctor.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/cuijialin8888-code/ci-queue-doctor"
+Issues = "https://github.com/cuijialin8888-code/ci-queue-doctor/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ci_queue_doctor"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
