@@ -17,3 +17,7 @@ The project is intentionally small and dependency-free at runtime.
 - Add a fixture-backed test for every new observable status.
 - Keep stable `CQD###` IDs; document any new ID in both READMEs.
 - State what the API cannot prove instead of inferring an internal GitHub cause.
+
+## Review log
+
+- 2026-09-12: reviewed public `main`, open Issues/PRs, and recent Actions; no open Issues/PRs were present, and the latest main-branch CI run (`34075026099`) completed successfully.
