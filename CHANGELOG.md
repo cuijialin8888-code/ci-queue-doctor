@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- A queue triage guide separating observable run states from GitHub scheduler claims.
+
 ## 0.1.0 — 2026-08-31
 
 - Initial public release.

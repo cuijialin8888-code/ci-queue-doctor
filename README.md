@@ -7,7 +7,7 @@
     <img alt="Runtime dependencies: zero" src="https://img.shields.io/badge/runtime%20dependencies-0-10b981">
     <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-0f172a"></a>
   </p>
-  <p><a href="README.zh-CN.md">简体中文</a> · <a href="docs/safety.md">Safety boundary</a> · <a href="#output-formats">Output formats</a></p>
+  <p><a href="README.zh-CN.md">简体中文</a> · <a href="docs/safety.md">Safety boundary</a> · <a href="docs/triage.md">Triage guide</a> · <a href="#output-formats">Output formats</a></p>
 </div>
 
 GitHub Actions can remain `queued` without making the reason obvious. A run
@@ -71,7 +71,7 @@ matching prose:
 | `CQD099` | Unknown status; classification is limited | warning |
 
 The warning threshold is a local observation window, not a claim about
-GitHub's internal scheduler. See [the safety boundary](docs/safety.md).
+GitHub's internal scheduler. See [the safety boundary](docs/safety.md). For a repeatable interpretation workflow, see [the queue triage guide](docs/triage.md).
 
 ## Output formats
 
