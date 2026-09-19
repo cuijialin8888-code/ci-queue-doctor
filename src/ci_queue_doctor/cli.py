@@ -20,6 +20,10 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--run", type=int, help="Inspect this workflow run ID")
     parser.add_argument("--branch", help="Filter latest-run selection to this branch")
     parser.add_argument(
+        "--workflow",
+        help="Filter latest-run selection to a workflow file name or workflow ID",
+    )
+    parser.add_argument(
         "--limit", type=int, default=20, help="Latest runs to request (1-100; default: 20)"
     )
     parser.add_argument(
@@ -87,7 +91,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             run_data = client.get_run(args.repo, args.run)
         else:
             branch = args.branch or default_branch
-            runs = client.list_runs(args.repo, branch=branch, limit=args.limit)
+            selection = {"branch": branch, "limit": args.limit}
+            if args.workflow:
+                selection["workflow"] = args.workflow
+            runs = client.list_runs(args.repo, **selection)
             if not runs:
                 raise GitHubApiError("No workflow runs matched the selected repository/branch.")
             run_data = runs[0]

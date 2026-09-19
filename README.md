@@ -30,6 +30,14 @@ From a checkout:
 python -m ci_queue_doctor --repo OWNER/REPOSITORY
 ```
 
+When a repository has several workflows, select the one whose latest run you
+want to inspect. The value can be a workflow file name such as `ci.yml` or a
+numeric workflow ID; the filter is passed to GitHub's read-only run listing:
+
+```console
+python -m ci_queue_doctor --repo OWNER/REPOSITORY --workflow ci.yml --branch main
+```
+
 Inspect one run, use a five-minute threshold, and emit JSON:
 
 ```console

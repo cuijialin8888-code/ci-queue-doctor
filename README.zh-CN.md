@@ -26,6 +26,12 @@ Job 数据，把当前能观察到的状态整理成小而可审计的报告。
 python -m ci_queue_doctor --repo OWNER/REPOSITORY
 ```
 
+仓库包含多个工作流时，可以用文件名（例如 `ci.yml`）或工作流 ID 限定要检查的最新运行：
+
+```console
+python -m ci_queue_doctor --repo OWNER/REPOSITORY --workflow ci.yml --branch main
+```
+
 检查指定运行并输出 JSON：
 
 ```console

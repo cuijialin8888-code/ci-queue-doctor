@@ -46,3 +46,20 @@ def test_client_rejects_invalid_repo_without_network():
 
     with pytest.raises(GitHubApiError, match="OWNER/REPOSITORY"):
         GitHubClient(opener=never_called).get_repo("not a repo")
+
+
+def test_list_runs_can_filter_by_workflow_file_or_id():
+    seen = {}
+
+    def opener(request, timeout):
+        seen["url"] = request.full_url
+        return FakeResponse({"workflow_runs": []})
+
+    result = GitHubClient(opener=opener).list_runs(
+        "a/b", branch="main", limit=7, workflow="ci.yml"
+    )
+
+    assert result == []
+    assert seen["url"] == (
+        "https://api.github.com/repos/a/b/actions/runs?per_page=7&branch=main&workflow_id=ci.yml"
+    )

@@ -73,13 +73,21 @@ class GitHubClient:
         return self._get(f"/repos/{self._check_repo(repo)}")
 
     def list_runs(
-        self, repo: str, branch: str | None = None, limit: int = 20
+        self,
+        repo: str,
+        branch: str | None = None,
+        limit: int = 20,
+        workflow: str | None = None,
     ) -> list[dict[str, Any]]:
         if limit < 1 or limit > 100:
             raise GitHubApiError("--limit must be between 1 and 100.")
         data = self._get(
             f"/repos/{self._check_repo(repo)}/actions/runs",
-            {"per_page": str(limit), **({"branch": branch} if branch else {})},
+            {
+                "per_page": str(limit),
+                **({"branch": branch} if branch else {}),
+                **({"workflow_id": workflow.strip()} if workflow and workflow.strip() else {}),
+            },
         )
         runs = data.get("workflow_runs") if isinstance(data, dict) else None
         return runs if isinstance(runs, list) else []
