@@ -21,3 +21,5 @@ The project is intentionally small and dependency-free at runtime.
 ## Review log
 
 - 2026-09-12: reviewed public `main`, open Issues/PRs, and recent Actions; no open Issues/PRs were present, and the latest main-branch CI run (`34075026099`) completed successfully.
+
+- 2026-09-19: reviewed public `main`, open Issues/PRs, and recent Actions; no open Issues/PRs were present, and the latest main-branch CI run (`34675588770`) plus the latest configured pip update run (`34859123912`) completed successfully.
