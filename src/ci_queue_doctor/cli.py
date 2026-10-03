@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from . import __version__
 from .diagnose import diagnose
 from .github import GitHubApiError, GitHubClient
 from .render import render_json, render_markdown, render_sarif, render_text
+from .snapshot import load_snapshot
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -16,7 +19,12 @@ def _parser() -> argparse.ArgumentParser:
         prog="ci-queue-doctor",
         description="Read-only evidence for a GitHub Actions run that is queued or waiting.",
     )
-    parser.add_argument("--repo", required=True, help="GitHub repository in OWNER/REPOSITORY form")
+    parser.add_argument("--repo", help="GitHub repository in OWNER/REPOSITORY form")
+    parser.add_argument(
+        "--snapshot",
+        type=Path,
+        help="replay a saved JSON observation offline at its capturedAt time",
+    )
     parser.add_argument("--run", type=int, help="Inspect this workflow run ID")
     parser.add_argument("--branch", help="Filter latest-run selection to this branch")
     parser.add_argument(
@@ -79,38 +87,61 @@ def _fail_rank(level: str) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
-    if args.timeout <= 0 or args.threshold <= 0:
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if not args.snapshot and not args.repo:
+        parser.error("--repo is required unless --snapshot is supplied")
+    if args.snapshot and any(
+        (args.run is not None, args.branch, args.workflow, args.token, args.token_stdin)
+    ):
+        parser.error("--snapshot cannot be combined with run selection or token options")
+    if not all(math.isfinite(value) and value > 0 for value in (args.timeout, args.threshold)):
         print("error: --timeout and --threshold must be positive", file=sys.stderr)
         return 2
+    if not 1 <= args.limit <= 100 or (args.run is not None and args.run <= 0):
+        print("error: --limit must be 1-100 and --run must be positive", file=sys.stderr)
+        return 2
     try:
-        client = GitHubClient(token=_token(args), timeout=args.timeout)
-        repo_data = client.get_repo(args.repo)
-        default_branch = repo_data.get("default_branch") if isinstance(repo_data, dict) else None
-        if args.run is not None:
-            run_data = client.get_run(args.repo, args.run)
+        observed_at = None
+        if args.snapshot:
+            snapshot, observed_at = load_snapshot(args.snapshot)
+            if args.repo and args.repo.casefold() != snapshot["repo"].casefold():
+                raise ValueError("--repo does not match the snapshot repository")
+            args.repo = snapshot["repo"]
+            default_branch = snapshot.get("defaultBranch")
+            run_detail = snapshot["run"]
+            jobs = snapshot["jobs"]
         else:
-            branch = args.branch or default_branch
-            selection = {"branch": branch, "limit": args.limit}
-            if args.workflow:
-                selection["workflow"] = args.workflow
-            runs = client.list_runs(args.repo, **selection)
-            if not runs:
-                raise GitHubApiError("No workflow runs matched the selected repository/branch.")
-            run_data = runs[0]
-        raw_id = run_data.get("id") if isinstance(run_data, dict) else None
-        try:
-            run_id = int(raw_id)
-        except (TypeError, ValueError):
-            raise GitHubApiError("GitHub returned a workflow run without a valid ID.") from None
-        run_detail = client.get_run(args.repo, run_id)
-        jobs = client.list_jobs(args.repo, run_id)
+            client = GitHubClient(token=_token(args), timeout=args.timeout)
+            repo_data = client.get_repo(args.repo)
+            default_branch = (
+                repo_data.get("default_branch") if isinstance(repo_data, dict) else None
+            )
+            if args.run is not None:
+                run_data = client.get_run(args.repo, args.run)
+            else:
+                branch = args.branch or default_branch
+                selection = {"branch": branch, "limit": args.limit}
+                if args.workflow:
+                    selection["workflow"] = args.workflow
+                runs = client.list_runs(args.repo, **selection)
+                if not runs:
+                    raise GitHubApiError("No workflow runs matched the selected repository/branch.")
+                run_data = runs[0]
+            raw_id = run_data.get("id") if isinstance(run_data, dict) else None
+            try:
+                run_id = int(raw_id)
+            except (TypeError, ValueError):
+                raise GitHubApiError("GitHub returned a workflow run without a valid ID.") from None
+            run_detail = client.get_run(args.repo, run_id)
+            jobs = client.list_jobs(args.repo, run_id)
         report = diagnose(
             repo=args.repo,
             default_branch=default_branch,
             run_data=run_detail,
             jobs_data=jobs,
             threshold_minutes=args.threshold,
+            observed_at=observed_at,
         )
         print(_render(report, args.format), end="")
         if args.fail_on != "none" and any(
@@ -118,6 +149,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         ):
             return 1
         return 0
-    except (GitHubApiError, ValueError) as exc:
+    except (GitHubApiError, OSError, ValueError, TypeError, OverflowError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
