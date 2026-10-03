@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add bounded, deterministic offline snapshot replay at the saved observation time; validate limits and finite thresholds before network access.
+
 ### Added
 
 - A queue triage guide separating observable run states from GitHub scheduler claims.

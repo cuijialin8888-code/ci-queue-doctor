@@ -90,6 +90,27 @@ uploaded to a code-scanning-compatible consumer.
 Use `--fail-on warning` or `--fail-on error` when a monitoring job should fail
 on a finding. The default is exit code 0 unless the API request itself fails.
 
+## Offline snapshot replay
+
+On `main` (unreleased), `--snapshot observation.json` replays a saved observation without constructing an API client or reading a token. Queue age is evaluated at `capturedAt`, so repeated diagnoses remain reproducible. The existing output formats and `--fail-on` gates also work offline. A snapshot is bounded to 5 MB and must contain `schemaVersion: 1`, `repo`, `capturedAt` with a timezone, a `run` object, and a `jobs` array; `defaultBranch` is optional. Treat the snapshot as untrusted input and review its contents before sharing.
+
+```json
+{
+  "schemaVersion": 1,
+  "repo": "example/project",
+  "defaultBranch": "main",
+  "capturedAt": "2026-08-31T12:20:00Z",
+  "run": {"id": 123, "status": "queued", "created_at": "2026-08-31T12:00:00Z"},
+  "jobs": []
+}
+```
+
+```console
+ci-queue-doctor --snapshot observation.json --format json --fail-on warning
+```
+
+Live selection options (`--run`, `--branch`, `--workflow`) and token options cannot be combined with `--snapshot`. The live mode still requires `--repo`. Invalid limits and non-finite thresholds are rejected before API access.
+
 ## Development
 
 ```console
