@@ -1,5 +1,4 @@
 import json
-import sys
 
 import pytest
 
@@ -65,7 +64,8 @@ def test_deeply_nested_snapshot_is_input_error(tmp_path, monkeypatch, capsys, op
         raise AssertionError("invalid snapshot must not construct an API client")
 
     monkeypatch.setattr(cli, "GitHubClient", forbidden)
-    depth = sys.getrecursionlimit() + 100
+    # JSON decoder nesting limits differ from Python's recursion limit across versions.
+    depth = 20_000
     raw = json.dumps(snapshot_data())[:-1] + ', "extra": '
     raw += opening * depth + "0" + closing * depth + "}"
     path = tmp_path / "nested.json"
