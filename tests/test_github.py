@@ -1,4 +1,5 @@
 import json
+from urllib.error import HTTPError
 
 import pytest
 
@@ -48,18 +49,47 @@ def test_client_rejects_invalid_repo_without_network():
         GitHubClient(opener=never_called).get_repo("not a repo")
 
 
-def test_list_runs_can_filter_by_workflow_file_or_id():
+@pytest.mark.parametrize(
+    ("workflow", "segment"),
+    [(" ci.yml ", "ci.yml"), ("12345", "12345"), ("build #1.yml", "build%20%231.yml")],
+)
+def test_list_runs_can_filter_by_workflow_file_or_id(workflow, segment):
     seen = {}
 
     def opener(request, timeout):
         seen["url"] = request.full_url
-        return FakeResponse({"workflow_runs": []})
+        return FakeResponse({"workflow_runs": [{"id": 123, "workflow_id": 456}]})
 
     result = GitHubClient(opener=opener).list_runs(
-        "a/b", branch="main", limit=7, workflow="ci.yml"
+        "a/b", branch="main", limit=7, workflow=workflow
     )
 
-    assert result == []
+    assert result == [{"id": 123, "workflow_id": 456}]
     assert seen["url"] == (
-        "https://api.github.com/repos/a/b/actions/runs?per_page=7&branch=main&workflow_id=ci.yml"
+        f"https://api.github.com/repos/a/b/actions/workflows/{segment}/runs?per_page=7&branch=main"
     )
+
+
+@pytest.mark.parametrize("workflow", [None, "", "   "])
+def test_list_runs_without_workflow_keeps_repository_endpoint(workflow):
+    def opener(request, timeout):
+        assert request.method == "GET"
+        assert request.full_url == (
+            "https://api.github.com/repos/a/b/actions/runs?per_page=20&branch=feature%2Ffix"
+        )
+        return FakeResponse({"workflow_runs": [{"id": 789}]})
+
+    result = GitHubClient(opener=opener).list_runs(
+        "a/b", branch="feature/fix", workflow=workflow
+    )
+    assert result == [{"id": 789}]
+
+
+def test_unknown_workflow_is_an_error_instead_of_returning_unrelated_runs():
+    def opener(request, timeout):
+        if "/actions/workflows/missing.yml/runs" in request.full_url:
+            raise HTTPError(request.full_url, 404, "Not Found", {}, None)
+        return FakeResponse({"workflow_runs": [{"id": 999}]})
+
+    with pytest.raises(GitHubApiError, match="404"):
+        GitHubClient(opener=opener).list_runs("a/b", workflow="missing.yml")
