@@ -109,7 +109,7 @@ On `main` (unreleased), `--snapshot observation.json` replays a saved observatio
 ci-queue-doctor --snapshot observation.json --format json --fail-on warning
 ```
 
-Live selection options (`--run`, `--branch`, `--workflow`) and token options cannot be combined with `--snapshot`. The live mode still requires `--repo`. Invalid limits and non-finite thresholds are rejected before API access.
+Live selection options (`--run`, `--branch`, `--workflow`) and token options cannot be combined with `--snapshot`. The live mode still requires `--repo`. Invalid limits and non-finite thresholds are rejected before API access. Snapshots exceeding the JSON parser's nesting limit return input-error exit code 2 without a traceback, network access, or changes to the snapshot file.
 
 ## Development
 

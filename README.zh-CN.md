@@ -77,5 +77,5 @@ MIT，见 [LICENSE](LICENSE)。
 
 ## 离线重放 CI 观察快照
 
-`main` 分支新增（尚未发布版本）：`--snapshot observation.json` 根据快照中的 `capturedAt` 时间重放诊断，不创建网络客户端、不读取令牌。重复诊断得到相同结果，原有报告格式和 `--fail-on` 策略继续生效。JSON 快照最大 5 MB，包含 `schemaVersion: 1`、`repo`、带时区的 `capturedAt`、`run` 对象和 `jobs` 数组；`defaultBranch` 可选。快照不能与在线选择或令牌参数混用。在线模式仍要求 `--repo`，无效数量和非有限阈值会在网络请求前拒绝。
+`main` 分支新增（尚未发布版本）：`--snapshot observation.json` 根据快照中的 `capturedAt` 时间重放诊断，不创建网络客户端、不读取令牌。重复诊断得到相同结果，原有报告格式和 `--fail-on` 策略继续生效。JSON 快照最大 5 MB，包含 `schemaVersion: 1`、`repo`、带时区的 `capturedAt`、`run` 对象和 `jobs` 数组；`defaultBranch` 可选。快照不能与在线选择或令牌参数混用。在线模式仍要求 `--repo`，无效数量和非有限阈值会在网络请求前拒绝。快照嵌套超过 JSON 解析器限制时，返回输入错误退出码 2，不输出异常堆栈、不联网，也不修改快照文件。
 

@@ -58,6 +58,26 @@ def test_snapshot_cannot_select_a_live_run(tmp_path):
     assert exc.value.code == 2
 
 
+@pytest.mark.parametrize(("opening", "closing"), [("[", "]"), ('{"nested":', "}")])
+def test_deeply_nested_snapshot_is_input_error(tmp_path, monkeypatch, capsys, opening, closing):
+    def forbidden(**_kwargs):
+        raise AssertionError("invalid snapshot must not construct an API client")
+
+    monkeypatch.setattr(cli, "GitHubClient", forbidden)
+    # JSON decoder nesting limits differ from Python's recursion limit across versions.
+    depth = 20_000
+    raw = json.dumps(snapshot_data())[:-1] + ', "extra": '
+    raw += opening * depth + "0" + closing * depth + "}"
+    path = tmp_path / "nested.json"
+    path.write_text(raw, encoding="utf-8")
+    before = path.read_bytes()
+    assert cli.main(["--snapshot", str(path)]) == 2
+    captured = capsys.readouterr()
+    assert "nesting" in captured.err
+    assert captured.out == ""
+    assert path.read_bytes() == before
+
+
 @pytest.mark.parametrize("value", ["nan", "inf", "-1"])
 def test_nonfinite_threshold_is_rejected_before_network(value, monkeypatch, capsys):
     def forbidden(**_kwargs):

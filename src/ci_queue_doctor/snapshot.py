@@ -20,6 +20,8 @@ def load_snapshot(path: Path) -> tuple[dict[str, Any], datetime]:
         raise ValueError("snapshot exceeds the 5 MB size limit")
     try:
         data = json.loads(raw.decode("utf-8-sig"))
+    except RecursionError as exc:
+        raise ValueError("snapshot JSON nesting exceeds the parser limit") from exc
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("snapshot is not valid UTF-8 JSON") from exc
     if not isinstance(data, dict) or data.get("schemaVersion") != 1:
