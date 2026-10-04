@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fix `--workflow` selection by using the workflow-specific runs endpoint; nonexistent workflows now report an error instead of returning unrelated repository runs.
 - Add bounded, deterministic offline snapshot replay at the saved observation time; validate limits and finite thresholds before network access.
 - Handle snapshots exceeding the JSON parser's nesting limit as input errors instead of uncaught recursion errors.
 

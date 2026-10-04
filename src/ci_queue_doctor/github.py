@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 _REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -81,12 +81,15 @@ class GitHubClient:
     ) -> list[dict[str, Any]]:
         if limit < 1 or limit > 100:
             raise GitHubApiError("--limit must be between 1 and 100.")
+        path = f"/repos/{self._check_repo(repo)}/actions"
+        selected_workflow = workflow.strip() if workflow else ""
+        if selected_workflow:
+            path += f"/workflows/{quote(selected_workflow, safe='')}"
         data = self._get(
-            f"/repos/{self._check_repo(repo)}/actions/runs",
+            f"{path}/runs",
             {
                 "per_page": str(limit),
                 **({"branch": branch} if branch else {}),
-                **({"workflow_id": workflow.strip()} if workflow and workflow.strip() else {}),
             },
         )
         runs = data.get("workflow_runs") if isinstance(data, dict) else None
