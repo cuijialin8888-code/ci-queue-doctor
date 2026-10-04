@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add bounded, deterministic offline snapshot replay at the saved observation time; validate limits and finite thresholds before network access.
+- Handle snapshots exceeding the JSON parser's nesting limit as input errors instead of uncaught recursion errors.
 
 ### Added
 

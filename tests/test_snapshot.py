@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 
@@ -56,6 +57,25 @@ def test_snapshot_cannot_select_a_live_run(tmp_path):
     with pytest.raises(SystemExit) as exc:
         cli.main(["--snapshot", str(tmp_path / "x.json"), "--run", "123"])
     assert exc.value.code == 2
+
+
+@pytest.mark.parametrize(("opening", "closing"), [("[", "]"), ('{"nested":', "}")])
+def test_deeply_nested_snapshot_is_input_error(tmp_path, monkeypatch, capsys, opening, closing):
+    def forbidden(**_kwargs):
+        raise AssertionError("invalid snapshot must not construct an API client")
+
+    monkeypatch.setattr(cli, "GitHubClient", forbidden)
+    depth = sys.getrecursionlimit() + 100
+    raw = json.dumps(snapshot_data())[:-1] + ', "extra": '
+    raw += opening * depth + "0" + closing * depth + "}"
+    path = tmp_path / "nested.json"
+    path.write_text(raw, encoding="utf-8")
+    before = path.read_bytes()
+    assert cli.main(["--snapshot", str(path)]) == 2
+    captured = capsys.readouterr()
+    assert "nesting" in captured.err
+    assert captured.out == ""
+    assert path.read_bytes() == before
 
 
 @pytest.mark.parametrize("value", ["nan", "inf", "-1"])
