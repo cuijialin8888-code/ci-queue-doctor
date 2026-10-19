@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import string
 from typing import Any
 
 from .model import Finding, Report
@@ -14,13 +15,27 @@ def _level_icon(level: str) -> str:
     return {"error": "ERROR", "warning": "WARN", "info": "INFO"}.get(level, level.upper())
 
 
+def _markdown_text(value: str) -> str:
+    value = value.replace("\r", r"\r").replace("\n", r"\n")
+    # Character references remain literal even in renderers with automatic links.
+    return "".join(f"&#{ord(char)};" if char in string.punctuation else char for char in value)
+
+
+def _markdown_code(value: str) -> str:
+    return "<code>" + _markdown_text(value) + "</code>"
+
+
 def _finding_lines(finding: Finding, markdown: bool = False) -> list[str]:
     prefix = "- " if markdown else "  "
-    lines = [f"{prefix}[{_level_icon(finding.level)}] {finding.code}: {finding.title}"]
-    lines.append(f"{prefix}  {finding.message}")
+    text = _markdown_text if markdown else str
+    lines = [
+        f"{prefix}[{text(_level_icon(finding.level))}] "
+        f"{text(finding.code)}: {text(finding.title)}"
+    ]
+    lines.append(f"{prefix}  {text(finding.message)}")
     for evidence in finding.evidence:
-        lines.append(f"{prefix}  Evidence: {evidence}")
-    lines.append(f"{prefix}  Next: {finding.next_step}")
+        lines.append(f"{prefix}  Evidence: {text(evidence)}")
+    lines.append(f"{prefix}  Next: {text(finding.next_step)}")
     return lines
 
 
@@ -66,12 +81,14 @@ def render_markdown(report: Report) -> str:
     lines = [
         "# CI Queue Doctor report",
         "",
-        f"- Repository: `{report.repo}`",
-        f"- Run: `{run.run_id}` — {run.name}",
-        f"- Status: `{run.status}` / `{run.conclusion or 'not concluded'}`",
-        f"- Event / branch: `{run.event or 'unknown'}` / `{run.branch or 'unknown'}`",
+        f"- Repository: {_markdown_code(report.repo)}",
+        f"- Run: `{run.run_id}` — {_markdown_text(run.name)}",
+        f"- Status: {_markdown_code(run.status)} / "
+        f"{_markdown_code(run.conclusion or 'not concluded')}",
+        f"- Event / branch: {_markdown_code(run.event or 'unknown')} / "
+        f"{_markdown_code(run.branch or 'unknown')}",
         f"- Queue age: `{queue_age}` seconds",
-        f"- Job statuses: `{job_statuses}`",
+        f"- Job statuses: {_markdown_code(job_statuses)}",
         "",
         "## Findings",
         "",
