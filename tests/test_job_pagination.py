@@ -65,9 +65,9 @@ class JobPaginationTests(unittest.TestCase):
             with self.subTest(second=second):
                 seen = []
 
-                def opener(request, timeout, payload=second):
-                    seen.append(request.full_url)
-                    if len(seen) == 1:
+                def opener(request, timeout, payload=second, calls=seen):
+                    calls.append(request.full_url)
+                    if len(calls) == 1:
                         return Response({"total_count": 101, "jobs": [{}] * 100})
                     return Response(payload)
 
