@@ -103,9 +103,24 @@ class GitHubClient:
     def list_jobs(self, repo: str, run_id: int) -> list[dict[str, Any]]:
         if run_id < 1:
             raise GitHubApiError("Workflow run ID must be a positive integer.")
-        data = self._get(
-            f"/repos/{self._check_repo(repo)}/actions/runs/{run_id}/jobs",
-            {"per_page": "100"},
-        )
-        jobs = data.get("jobs") if isinstance(data, dict) else None
-        return jobs if isinstance(jobs, list) else []
+        path = f"/repos/{self._check_repo(repo)}/actions/runs/{run_id}/jobs"
+        jobs: list[dict[str, Any]] = []
+        for page in range(1, 101):
+            params = {"per_page": "100"}
+            if page > 1:
+                params["page"] = str(page)
+            data = self._get(path, params)
+            batch = data.get("jobs") if isinstance(data, dict) else None
+            if not isinstance(batch, list):
+                raise GitHubApiError("GitHub returned an invalid workflow jobs list.")
+            jobs.extend(batch)
+            total = data.get("total_count")
+            if isinstance(total, int) and len(jobs) >= total:
+                return jobs
+            if not batch:
+                if isinstance(total, int) and len(jobs) < total:
+                    raise GitHubApiError("GitHub returned an incomplete workflow jobs list.")
+                return jobs
+            if len(batch) < 100 and not isinstance(total, int):
+                return jobs
+        raise GitHubApiError("Workflow jobs exceed the supported pagination limit.")
