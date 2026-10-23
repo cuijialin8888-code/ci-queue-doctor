@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Read all workflow-job pages (up to 100 pages) instead of silently omitting jobs after the first 100; reject incomplete or malformed responses.
 - Escape workflow and finding data in Markdown reports so embedded markup and line breaks remain literal evidence.
 - Fix `--workflow` selection by using the workflow-specific runs endpoint; nonexistent workflows now report an error instead of returning unrelated repository runs.
 - Add bounded, deterministic offline snapshot replay at the saved observation time; validate limits and finite thresholds before network access.

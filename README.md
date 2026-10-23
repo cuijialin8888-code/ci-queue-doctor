@@ -17,6 +17,7 @@ turns the observable state into a small, auditable report.
 
 It is deliberately conservative:
 
+- **Complete job evidence:** reads subsequent job pages, up to 100 pages, and reports an error when the result is incomplete or exceeds that bound.
 - **GET-only:** it never dispatches, reruns, cancels, approves, or edits a workflow.
 - **Evidence-first:** every finding includes the fields that produced it.
 - **Honest uncertainty:** it does not pretend to know GitHub's internal scheduler reason.
